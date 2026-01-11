@@ -1,0 +1,31 @@
+from app.api.v1.routes import (
+    auth,
+    checkins,
+    consents,
+    goals,
+    health,
+    history,
+    journal,
+    messages,
+    sessions,
+    settings,
+    summaries,
+    support,
+    users,
+)
+
+__all__ = [
+    "health",
+    "users",
+    "consents",
+    "checkins",
+    "sessions",
+    "messages",
+    "summaries",
+    "goals",
+    "journal",
+    "settings",
+    "history",
+    "auth",
+    "support",
+]
