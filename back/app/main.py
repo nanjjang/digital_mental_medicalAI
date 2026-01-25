@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import (
     auth,
+    chat,
     checkins,
     consents,
     goals,
@@ -38,12 +39,11 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
-
-
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(consents.router, prefix="/api/v1")
 app.include_router(checkins.router, prefix="/api/v1")
+app.include_router(chat.router, prefix="/api/v1")
 app.include_router(sessions.router, prefix="/api/v1")
 app.include_router(messages.router, prefix="/api/v1")
 app.include_router(summaries.router, prefix="/api/v1")

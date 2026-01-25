@@ -55,10 +55,8 @@ class CheckInOut(BaseModel):
     energy: int
     support: int
     severity_score: int
-
-
 class ChatSessionCreate(BaseModel):
-    user_id: int
+    user_id: int | None = None
     severity_score: int = Field(default=0, ge=0, le=100)
 
 
@@ -66,9 +64,10 @@ class ChatSessionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    user_id: int
+    user_id: int | None
     status: str
     severity_score: int
+    started_at: datetime
 
 
 class ChatSessionUpdate(BaseModel):
@@ -89,6 +88,8 @@ class MessageOut(BaseModel):
     session_id: int
     role: str
     content: str
+    meta: dict[str, float | str | dict[str, float]] | None = None
+    created_at: datetime
 
 
 class SummaryCreate(BaseModel):
@@ -161,7 +162,7 @@ class AuthSignup(BaseModel):
     username: str = Field(min_length=3, max_length=80)
     email: EmailStr
     display_name: str = Field(default="Guest", max_length=80)
-    password: str = Field(min_length=8)
+    password: str = Field(min_length=8, max_length=72)
     privacy_accepted: bool
     safety_accepted: bool
     terms_accepted: bool
@@ -177,6 +178,20 @@ class AuthResponse(BaseModel):
 
     user: UserOut
     token: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+    session_id: int | None = None
+    user_id: int | None = None
+
+
+class ChatResponse(BaseModel):
+    session_id: int
+    reply: str
+    label: str
+    scores: dict[str, float]
+    confidence: float
 
 
 class SupportTicketCreate(BaseModel):
