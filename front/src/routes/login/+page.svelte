@@ -1,18 +1,19 @@
 ﻿<script>
+  import { goto } from "$app/navigation";
+  import { setAuth } from "$lib/stores/auth";
+  
   let email = "";
   let password = "";
   let error = "";
-  let success = "";
   let loading = false;
 
   async function handleSubmit(event) {
     event.preventDefault();
     error = "";
-    success = "";
     loading = true;
 
     try {
-      const response = await fetch("/api/v1/auth/login", {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -26,8 +27,16 @@
       if (typeof localStorage !== "undefined") {
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user_id", String(data.user.id));
+        localStorage.setItem("user_email", data.user.email);
+        localStorage.setItem("user_username", data.user.username);
       }
-      success = "로그인에 성공했습니다.";
+
+      setAuth({
+        username: data.user.username,
+        email: data.user.email
+      });
+
+      goto("/");
     } catch (err) {
       error = err.message;
     } finally {
@@ -42,9 +51,6 @@
 
   {#if error}
     <div class="error">{error}</div>
-  {/if}
-  {#if success}
-    <div class="notice">{success}</div>
   {/if}
 
   <form class="form" on:submit={handleSubmit}>
@@ -61,3 +67,4 @@
     </button>
   </form>
 </section>
+

@@ -1,4 +1,8 @@
 ﻿<script>
+  import { goto } from "$app/navigation";
+  import { setAuth } from "$lib/stores/auth";
+  
+  let username = "";
   let name = "";
   let email = "";
   let password = "";
@@ -8,14 +12,24 @@
   let loading = false;
   let termsAccepted = false;
   let privacyAccepted = false;
-  let crisisAccepted = false;
+  let safetyAccepted = false;
 
   async function handleSubmit(event) {
     event.preventDefault();
     error = "";
     success = "";
 
-    if (!termsAccepted || !privacyAccepted || !crisisAccepted) {
+    if (!username) {
+      error = "아이디를 입력해 주세요.";
+      return;
+    }
+
+    if (username.length < 3) {
+      error = "아이디는 최소 3자 이상이어야 합니다.";
+      return;
+    }
+
+    if (!termsAccepted || !privacyAccepted || !safetyAccepted) {
       error = "필수 약관에 동의해 주세요.";
       return;
     }
@@ -25,19 +39,25 @@
       return;
     }
 
+    if (password.length < 8) {
+      error = "비밀번호는 최소 8자 이상이어야 합니다.";
+      return;
+    }
+
     loading = true;
 
     try {
-      const response = await fetch("/api/v1/auth/signup", {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          username,
+          display_name: name,
           email,
           password,
           terms_accepted: termsAccepted,
           privacy_accepted: privacyAccepted,
-          crisis_accepted: crisisAccepted
+          safety_accepted: safetyAccepted
         })
       });
 
@@ -46,14 +66,25 @@
         throw new Error(data.detail || "회원가입에 실패했습니다.");
       }
 
-      success = "회원가입이 완료되었습니다. 로그인해 주세요.";
-      name = "";
-      email = "";
-      password = "";
-      passwordConfirm = "";
-      termsAccepted = false;
-      privacyAccepted = false;
-      crisisAccepted = false;
+      // 로컬스토리지에 토큰 저장
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("auth_token", data.token);
+        localStorage.setItem("user_id", String(data.user.id));
+        localStorage.setItem("user_email", data.user.email);
+        localStorage.setItem("user_username", data.user.username);
+      }
+
+      setAuth({
+        username: data.user.username,
+        email: data.user.email
+      });
+
+      success = "회원가입이 완료되었습니다!";
+      
+      // 2초 후 대시보드로 이동
+      setTimeout(() => {
+        goto("/");
+      }, 1500);
     } catch (err) {
       error = err.message;
     } finally {
@@ -75,8 +106,12 @@
 
   <form class="form" on:submit={handleSubmit}>
     <label class="field">
-      <span class="label">이름</span>
-      <input type="text" bind:value={name} required />
+      <span class="label">아이디</span>
+      <input type="text" bind:value={username} placeholder="3자 이상" required />
+    </label>
+    <label class="field">
+      <span class="label">표시 이름</span>
+      <input type="text" bind:value={name} placeholder="선택사항" />
     </label>
     <label class="field">
       <span class="label">이메일</span>
@@ -101,8 +136,8 @@
       개인정보 처리방침 동의 (필수)
     </label>
     <label class="check">
-      <input type="checkbox" bind:checked={crisisAccepted} />
-      위기 상황 대응 안내 동의 (필수)
+      <input type="checkbox" bind:checked={safetyAccepted} />
+      안전 및 위기 상황 안내 동의 (필수)
     </label>
 
     <button class="btn" type="submit" disabled={loading}>
@@ -110,3 +145,4 @@
     </button>
   </form>
 </section>
+

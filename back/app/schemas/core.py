@@ -15,6 +15,7 @@ class UserOut(BaseModel):
 
     id: int
     email: str | None
+    username: str
     display_name: str
 
 
@@ -157,6 +158,7 @@ class SettingsOut(BaseModel):
 
 
 class AuthSignup(BaseModel):
+    username: str = Field(min_length=3, max_length=80)
     email: EmailStr
     display_name: str = Field(default="Guest", max_length=80)
     password: str = Field(min_length=8)
