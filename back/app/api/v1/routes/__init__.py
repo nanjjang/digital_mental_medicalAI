@@ -1,5 +1,6 @@
 from app.api.v1.routes import (
     auth,
+    chat,
     checkins,
     consents,
     goals,
@@ -19,6 +20,7 @@ __all__ = [
     "users",
     "consents",
     "checkins",
+    "chat",
     "sessions",
     "messages",
     "summaries",

@@ -4,3 +4,7 @@ sqlalchemy
 pydantic
 passlib[bcrypt]
 email-validator
+bcrypt<4
+numpy
+onnxruntime
+transformers

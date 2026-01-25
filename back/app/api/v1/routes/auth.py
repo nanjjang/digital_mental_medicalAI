@@ -19,11 +19,16 @@ def signup(payload: AuthSignup, db: Session = Depends(get_db)):
     if not payload.terms_accepted:
         raise HTTPException(status_code=400, detail="Terms must be accepted")
 
-    existing = db.query(User).filter(User.email == payload.email).first()
-    if existing:
+    existing_email = db.query(User).filter(User.email == payload.email).first()
+    if existing_email:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    existing_username = db.query(User).filter(User.username == payload.username).first()
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
+
     user = User(
+        username=payload.username,
         email=payload.email,
         display_name=payload.display_name,
         password_hash=hash_password(payload.password),

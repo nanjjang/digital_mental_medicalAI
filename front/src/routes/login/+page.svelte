@@ -1,4 +1,7 @@
 ﻿<script>
+  import { goto } from "$app/navigation";
+  import { setAuth } from "$lib/stores/auth";
+
   let email = "";
   let password = "";
   let error = "";
@@ -26,8 +29,17 @@
       if (typeof localStorage !== "undefined") {
         localStorage.setItem("auth_token", data.token);
         localStorage.setItem("user_id", String(data.user.id));
+        localStorage.setItem("user_email", data.user.email || "");
+        localStorage.setItem("user_username", data.user.username || "");
       }
+
+      setAuth({
+        username: data.user.username,
+        email: data.user.email
+      });
+
       success = "로그인에 성공했습니다.";
+      await goto("/chat");
     } catch (err) {
       error = err.message;
     } finally {
