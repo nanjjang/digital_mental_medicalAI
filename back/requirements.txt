@@ -2,5 +2,9 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic
-bcrypt
+passlib[bcrypt]
 email-validator
+bcrypt<4
+numpy
+onnxruntime
+transformers
