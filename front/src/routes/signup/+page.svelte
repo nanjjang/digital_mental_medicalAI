@@ -1,7 +1,8 @@
 ﻿<script>
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
-  import { setAuth } from "$lib/stores/auth";
-  
+  import { auth, initFromStorage, setAuth } from "$lib/stores/auth";
   let username = "";
   let name = "";
   let email = "";
@@ -14,6 +15,13 @@
   let privacyAccepted = false;
   let safetyAccepted = false;
 
+  onMount(() => {
+    initFromStorage();
+  });
+
+  $: if (browser && $auth?.isLoggedIn) {
+    goto("/chat");
+  }
   async function handleSubmit(event) {
     event.preventDefault();
     error = "";
@@ -144,5 +152,19 @@
       {loading ? "가입 중..." : "회원가입"}
     </button>
   </form>
+  <div class="form-footer">
+    <span class="soft-text">이미 계정이 있나요?</span>
+    <a class="btn text" href="/login">로그인</a>
+  </div>
 </section>
 
+
+<style>
+  .form-footer {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+  }
+</style>

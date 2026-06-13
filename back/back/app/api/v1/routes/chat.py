@@ -10,7 +10,7 @@ from app.services.inference import get_model_runner
 
 router = APIRouter(tags=["chat"])
 
-_REPLIES: dict[str, dict | str] = {
+_REPLIES: dict[str, dict] = {
     "suicide": {
         "high": (
             "지금 말해준 내용이 매우 무겁게 느껴져요. 혼자가 아니라는 걸 꼭 기억해 주세요. "

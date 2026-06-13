@@ -1,4 +1,8 @@
 ﻿<script>
+  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
+  import { auth, initFromStorage } from "$lib/stores/auth";
+
   const rowOne = [
     "오늘 감정 상태를 기록해 줘",
     "최근 불안이 커졌는데 원인을 정리해 줘",
@@ -27,6 +31,23 @@
   ];
 
   const toLink = (text) => `/chat?prompt=${encodeURIComponent(text)}`;
+  let startHref = "/signup";
+
+  const handleStart = (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+    if (typeof localStorage !== "undefined" && localStorage.getItem("auth_token")) {
+      goto("/chat");
+      return;
+    }
+    goto("/signup");
+  };
+  $: startHref = $auth?.isLoggedIn ? "/chat" : "/signup";
+
+  onMount(() => {
+    initFromStorage();
+  });
 </script>
 
 <section class="section">
@@ -38,7 +59,7 @@
       바로 운영 가능한 구조로 설계했습니다.
     </p>
     <div class="hero-actions">
-      <a class="btn" href="/signup">시작하기</a>
+      <a class="btn" href={startHref} on:click|preventDefault={handleStart}>시작하기</a>
       <a class="btn text" href="/#features">자세히 알아보기</a>
     </div>
     <div class="hero-links">

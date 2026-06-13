@@ -59,6 +59,8 @@ class CheckIn(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped[User] = relationship(back_populates="checkins")
+
+
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
@@ -78,7 +80,7 @@ class Message(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("chat_sessions.id"), index=True)
-    role: Mapped[str] = mapped_column(String(24), default="client")
+    role: Mapped[str] = mapped_column(String(24), default="user")
     content: Mapped[str] = mapped_column(Text)
     meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

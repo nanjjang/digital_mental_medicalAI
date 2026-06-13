@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s)",
+      "PowerShell(ls -Recurse \"D:\\\\projects\\\\digital_mental_medicalAI\\\\back\\\\app\\\\models\\\\\" 2>$null | Select-Object -Property FullName, @{Name=\"SizeMB\";Expression={'{0:N2}' -f \\($_.Length/1MB\\)}} | Format-Table -AutoSize)",
+      "Bash(grep -E \"^[^\\\\\\\\]*\\\\\\\\\\(back|front\\)\")",
+      "Bash(python -c \"from app.main import app; print\\('import OK'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(Remove-Item \"D:/projects/digital_mental_medicalAI/back/app.db\" -Force)",
+      "Bash(Write-Host \"DB 삭제 완료\")",
+      "Bash(python3 *)",
+      "Bash(python -B -c ' *)",
+      "Bash(rm -f app.db)",
+      "Bash(python -B -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level warning)",
+      "Bash(echo \"백엔드 시작됨 PID: $!\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://127.0.0.1:8000/api/v1/health)",
+      "Bash(curl -s http://127.0.0.1:5173)",
+      "Bash(curl -s -m 3 http://localhost:5173/)",
+      "Bash(curl -s -m 10 -X POST http://localhost:5173/api/v1/sessions -H 'Content-Type: application/json' -d '{\"user_id\": null, \"severity_score\": 0}')"
+    ]
+  }
+}

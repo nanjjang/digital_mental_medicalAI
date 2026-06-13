@@ -17,6 +17,20 @@ class UserOut(BaseModel):
     email: str | None
     username: str
     display_name: str
+    phone: str | None = None
+    location: str | None = None
+    avatar_url: str | None = None
+    bio: str | None = None
+
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    username: str | None = Field(default=None, min_length=3, max_length=80)
+    display_name: str | None = Field(default=None, max_length=80)
+    phone: str | None = Field(default=None, max_length=40)
+    location: str | None = Field(default=None, max_length=120)
+    avatar_url: str | None = Field(default=None, max_length=255)
+    bio: str | None = None
 
 
 class ConsentCreate(BaseModel):
@@ -145,6 +159,15 @@ class SettingsCreate(BaseModel):
     user_id: int
     tone: str = "gentle"
     notifications_enabled: bool = True
+    daily_checkin_enabled: bool = True
+    weekly_report_enabled: bool = True
+    summary_autosave: bool = False
+    language: str = "ko-KR"
+    timezone: str = "Asia/Seoul"
+    data_retention_days: int = 365
+    marketing_opt_in: bool = False
+    crisis_alerts_enabled: bool = True
+    privacy_mode: bool = False
     guardian_contact: str | None = None
 
 
@@ -155,6 +178,15 @@ class SettingsOut(BaseModel):
     user_id: int
     tone: str
     notifications_enabled: bool
+    daily_checkin_enabled: bool
+    weekly_report_enabled: bool
+    summary_autosave: bool
+    language: str
+    timezone: str
+    data_retention_days: int
+    marketing_opt_in: bool
+    crisis_alerts_enabled: bool
+    privacy_mode: bool
     guardian_contact: str | None
 
 

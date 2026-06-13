@@ -26,11 +26,13 @@ from app.schemas.core import (
     SupportTicketCreate,
     SupportTicketOut,
     UserCreate,
+    UserUpdate,
     UserOut,
 )
 
 __all__ = [
     "UserCreate",
+    "UserUpdate",
     "UserOut",
     "ConsentCreate",
     "ConsentOut",

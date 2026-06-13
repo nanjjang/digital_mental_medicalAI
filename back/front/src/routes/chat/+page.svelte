@@ -1,4 +1,4 @@
-﻿<script>
+<script>
   import { onMount, tick } from "svelte";
 
   let prompt = "";
@@ -8,10 +8,10 @@
   let inputRef;
   let threadRef;
   let sessionId = null;
+  let isSending = false;
   let loadingSession = false;
   let loadingSessions = false;
   let loadingMessages = false;
-  let isSending = false;
   let error = "";
   let loggedIn = false;
   let userId = null;
@@ -20,34 +20,28 @@
     normal: "정상",
     depression: "우울",
     suicide: "자살 위험",
-    anxiety: "불안"
+    anxiety: "불안",
   };
 
-  const nowTime = () => {
-    const date = new Date();
-    return date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
-  };
+  const nowTime = () =>
+    new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 
   const formatLabel = (label) => labelMap[label] ?? label;
 
   const formatClock = (value) => {
     if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+    const d = new Date(value);
+    return isNaN(d) ? "" : d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
   };
 
   const formatDate = (value) => {
     if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    const d = new Date(value);
+    return isNaN(d) ? "" : d.toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
-  const topScores = (scores) => {
-    if (!scores) return [];
-    return Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  };
+  const topScores = (scores) =>
+    scores ? Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, 3) : [];
 
   const scrollToBottom = async () => {
     await tick();
@@ -57,23 +51,15 @@
   const addMessage = (role, text, meta = null, timeOverride = null) => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    messages = [
-      ...messages,
-      { id: crypto.randomUUID(), role, text: trimmed, time: timeOverride ?? nowTime(), meta }
-    ];
+    messages = [...messages, { id: crypto.randomUUID(), role, text: trimmed, time: timeOverride ?? nowTime(), meta }];
     scrollToBottom();
   };
 
   const fetchJson = async (input, init) => {
-    const response = await fetch(input, init);
-    const contentType = response.headers.get("content-type") || "";
-    const data = contentType.includes("application/json")
-      ? await response.json()
-      : await response.text();
-    if (!response.ok) {
-      const detail = typeof data === "string" ? data : data.detail;
-      throw new Error(detail || "요청에 실패했습니다.");
-    }
+    const res = await fetch(input, init);
+    const ct = res.headers.get("content-type") ?? "";
+    const data = ct.includes("application/json") ? await res.json() : await res.text();
+    if (!res.ok) throw new Error(typeof data === "string" ? data : (data.detail ?? "요청에 실패했습니다."));
     return data;
   };
 
@@ -82,16 +68,13 @@
     error = "";
     try {
       const history = await fetchJson(`/api/v1/messages?session_id=${targetSessionId}`);
-      messages = history
-        .slice()
-        .reverse()
-        .map((item) => ({
-          id: item.id,
-          role: item.role === "assistant" ? "assistant" : "user",
-          text: item.content,
-          time: formatClock(item.created_at),
-          meta: item.meta ?? null
-        }));
+      messages = history.map((item) => ({
+        id: item.id,
+        role: item.role === "assistant" ? "assistant" : "user",
+        text: item.content,
+        time: formatClock(item.created_at),
+        meta: item.meta ?? null,
+      }));
       scrollToBottom();
     } catch (err) {
       error = err.message || "메시지를 불러오지 못했습니다.";
@@ -120,13 +103,11 @@
       const session = await fetchJson("/api/v1/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, severity_score: 0 })
+        body: JSON.stringify({ user_id: userId, severity_score: 0 }),
       });
       sessionId = session.id;
       messages = [];
-      if (loggedIn) {
-        await refreshSessions();
-      }
+      if (loggedIn) await refreshSessions();
       return session;
     } catch (err) {
       error = err.message || "세션을 준비하지 못했습니다.";
@@ -156,16 +137,15 @@
 
     isSending = true;
     try {
-      const payload = { message: trimmed, session_id: sessionId };
       const data = await fetchJson("/api/v1/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ message: trimmed, session_id: sessionId }),
       });
       addMessage("assistant", data.reply, {
         label: data.label,
         scores: data.scores,
-        confidence: data.confidence
+        confidence: data.confidence,
       });
     } catch (err) {
       error = err.message || "메시지 전송에 실패했습니다.";
@@ -192,11 +172,8 @@
   };
 
   onMount(async () => {
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get("prompt");
-    if (value) {
-      prompt = value;
-    }
+    const value = new URLSearchParams(window.location.search).get("prompt");
+    if (value) prompt = value;
 
     if (typeof localStorage !== "undefined") {
       const storedUserId = localStorage.getItem("user_id");
@@ -215,9 +192,7 @@
     }
 
     const session = await createSession();
-    if (session) {
-      await loadMessages(session.id);
-    }
+    if (session) await loadMessages(session.id);
   });
 </script>
 
@@ -226,8 +201,7 @@
     <p class="eyebrow">AI 대화 공간</p>
     <h1 class="title">지금 떠오르는 생각을 편하게 말해 보세요.</h1>
     <p class="subtitle">
-      카카오톡과 GPT, Gemini의 장점을 분석해 만든 집중형 채팅 화면입니다. 핵심 질문을 빠르게 입력하고
-      기록으로 남길 수 있습니다.
+      정신 건강 AI가 당신의 말 속 감정을 분석하고, 상황에 맞는 응답을 제공합니다.
     </p>
     {#if error}
       <p class="notice error">{error}</p>
@@ -248,15 +222,14 @@
           <button class="ghost" type="button" on:click={createSession} disabled={loadingSession}>새 세션</button>
         </div>
         {#if loadingSessions}
-          <p class="muted">세션을 불러오는 중...</p>
-        {/if}
-        {#if sessions.length === 0 && !loadingSessions}
+          <p class="muted">불러오는 중...</p>
+        {:else if sessions.length === 0}
           <p class="muted">저장된 세션이 없어요.</p>
         {/if}
         <div class="session-list">
           {#each sessions as session (session.id)}
             <button
-              class={`session-item ${session.id === sessionId ? "active" : ""}`}
+              class="session-item {session.id === sessionId ? 'active' : ''}"
               type="button"
               on:click={() => activateSession(session.id)}
             >
@@ -304,14 +277,14 @@
               <div class="meta">
                 <div class="meta-row">
                   <span class="badge">{formatLabel(message.meta.label)}</span>
-                  {#if message.meta.confidence}
+                  {#if message.meta.confidence != null}
                     <span class="confidence">확신 {Math.round(message.meta.confidence * 100)}%</span>
                   {/if}
                 </div>
                 {#if message.meta.scores}
                   <div class="score-row">
-                    {#each topScores(message.meta.scores) as item}
-                      <span>{formatLabel(item[0])} {Math.round(item[1] * 100)}%</span>
+                    {#each topScores(message.meta.scores) as [lbl, score]}
+                      <span>{formatLabel(lbl)} {Math.round(score * 100)}%</span>
                     {/each}
                   </div>
                 {/if}
@@ -324,7 +297,9 @@
         {/each}
         {#if isSending}
           <div class="bubble assistant typing">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="dot-anim"></span>
+            <span class="dot-anim"></span>
+            <span class="dot-anim"></span>
           </div>
         {/if}
       </div>
@@ -397,6 +372,16 @@
     line-height: 1.7;
   }
 
+  .notice {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .notice.error {
+    color: #dc2626;
+  }
+
   .workspace {
     display: grid;
     gap: 1.5rem;
@@ -437,16 +422,22 @@
     padding: 0.35rem 0.8rem;
     font-size: 0.8rem;
     cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .ghost:hover:not(:disabled) {
+    background: #efefef;
   }
 
   .ghost:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
   .muted {
     color: var(--muted);
     margin: 0;
+    font-size: 0.85rem;
   }
 
   .session-list {
@@ -463,6 +454,11 @@
     cursor: pointer;
     display: grid;
     gap: 0.3rem;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .session-item:hover {
+    background: #f0f0f0;
   }
 
   .session-item.active {
@@ -472,18 +468,19 @@
 
   .session-title {
     font-weight: 700;
+    font-size: 0.9rem;
   }
 
   .session-meta {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--muted);
   }
 
-  .session-meta .dot {
-    font-size: 0.6rem;
+  .dot {
+    font-size: 0.55rem;
   }
 
   .conversation {
@@ -499,6 +496,7 @@
     border-radius: 14px;
     border: 1px solid var(--border);
     background: #ffffff;
+    font-size: 0.9rem;
   }
 
   .session-banner strong {
@@ -518,7 +516,8 @@
   .empty {
     color: var(--muted);
     text-align: center;
-    padding: 1.2rem 0;
+    padding: 1.5rem 0;
+    font-size: 0.9rem;
   }
 
   .bubble {
@@ -541,6 +540,32 @@
   .bubble p {
     margin: 0;
     line-height: 1.6;
+    font-size: 0.95rem;
+  }
+
+  .bubble.typing {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.75rem 1.1rem;
+    width: fit-content;
+  }
+
+  .dot-anim {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted, #94a3b8);
+    animation: blink 1.2s infinite ease-in-out;
+  }
+
+  .dot-anim:nth-child(2) { animation-delay: 0.2s; }
+  .dot-anim:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
+    40% { opacity: 1; transform: scale(1); }
   }
 
   .meta {
@@ -562,10 +587,12 @@
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
     font-weight: 600;
+    font-size: 0.78rem;
   }
 
   .confidence {
     font-weight: 600;
+    color: var(--muted);
   }
 
   .score-row {
@@ -575,8 +602,9 @@
   }
 
   .time {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
+    justify-self: end;
   }
 
   .bubble.assistant .time {
@@ -599,10 +627,14 @@
     resize: none;
     font: inherit;
     outline: none;
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
 
   textarea:disabled {
-    background: #f3f4f6;
+    background: transparent;
+    color: var(--muted);
+    cursor: not-allowed;
   }
 
   .composer-actions {
@@ -623,8 +655,19 @@
     border: 1px solid var(--border);
     background: #f8f8f8;
     border-radius: 999px;
-    padding: 0.35rem 0.8rem;
-    font-size: 0.85rem;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .chip:hover:not(:disabled) {
+    background: #efefef;
+  }
+
+  .chip:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .send {
@@ -632,15 +675,34 @@
     height: 44px;
     border-radius: 50%;
     border: none;
-    background: var(--accent);
+    background: var(--accent, #111827);
     color: #ffffff;
     font-size: 1.1rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
   }
 
   .send:disabled {
-    background: #94a3b8;
+    opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .cards {
@@ -656,51 +718,15 @@
     color: var(--muted);
     background: #f8f8f8;
     font-weight: 600;
+    font-size: 0.9rem;
     text-align: left;
     cursor: pointer;
+    transition: color 0.15s, background 0.15s;
   }
 
   .card:hover {
     color: var(--ink);
     background: #f1f1f1;
-  }
-
-  .bubble.typing {
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-  }
-
-  .dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--muted, #94a3b8);
-    animation: blink 1.2s infinite ease-in-out;
-  }
-
-  .dot:nth-child(2) { animation-delay: 0.2s; }
-  .dot:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0.2; transform: scale(0.85); }
-    40% { opacity: 1; transform: scale(1); }
-  }
-
-  .spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
   }
 
   @media (max-width: 900px) {
